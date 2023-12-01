@@ -1,0 +1,17 @@
+mod_n : 4
+
+SNR_db_min: 15.0
+SNR_db_max: 22.5
+SNR_step: 2.5
+
+epsilon_H : 1.0e-10
+
+epsilon_x_low_SNR: 1.0e-4
+epsilon_x_high_SNR: 4.0e-5
+
+temp_x_low_SNR: 0.5
+temp_x_high_SNR: 0.1
+
+temp_H: 0.001
+
+steps_per_noise_level: 3
