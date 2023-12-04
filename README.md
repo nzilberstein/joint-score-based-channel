@@ -24,27 +24,21 @@ Once downloaded, place the model in `models` as `model_3gpp_64x32.pt`
 ## Training 
 After downloading the example 3GPP data, a diffusion model can be trained by running:
 
-```
-python train_score.py
-```
+```python train_score.py```
 
 The model is trained for 80 epochs by default, and the last model weights will be automatically saved in the `model` folder under the appropriate structure. To train on other channel distributions, see the `--train` argument.
-There is also a notebook to run the training.
 
 ## Inference
 To run channel estimation with the 3GPP data and the pretrained model run:
 
-```
-python test_joint.py
-```
+```python test_joint.py```
 
 This will run channel estimation in the setting of paper with P = 30 and D = 50 of the paper; see the corresponding result in:
 
-<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_SER_64x32.pdf" width="860" height="600">
-<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_symbs_64x32.pdf" width="860" height="600">
+<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_SER_64x32.pdf">
+<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_symbs_64x32.pdf">
 
 Running the above command will automaticall save results in the `results_seed%f/3GPP_numpilots%f_numsymbols%f.pt` folder. 
-There is also a notebook to run the inference.
 
 # Acknowledgement
 
