@@ -93,7 +93,7 @@ oracle_log = np.zeros((len(spacing_range), len(alpha_range),
 complete_log = np.zeros((len(spacing_range), len(alpha_range),
                        len(lmbda_range), len(lr_range),
                        len(snr_range), gd_iter, kept_samples)) 
-result_dir = 'results_l1_baseline_lifted%d/model_%s_channel_%s' % (
+result_dir = 'results_l1_baseline_lifted%d' % (
     lifting, args.model, args.channel)
 if not os.path.isdir(result_dir):
     os.makedirs(result_dir)

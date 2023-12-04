@@ -303,6 +303,6 @@ for batch_size_x in args.batch_symbols_x_list:
                     'SER_langevin': SER_langevin
                     }   
         
-        # torch.save(save_dict,
-        #             result_dir + '/final_experiments/%schannel_numpilots%.1f_numsymbols%.1f.pt' % \
-        #             (args.channel, val_config.data.num_pilots, batch_size_x))
+        torch.save(save_dict,
+                    result_dir + '/final_experiments/%schannel_numpilots%.1f_numsymbols%.1f.pt' % \
+                    (args.channel, val_config.data.num_pilots, batch_size_x))
