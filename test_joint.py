@@ -47,7 +47,7 @@ logger.info(f"Device set to {device}.")
 
 # Set paths and seed
 train_seed, val_seed = 1234, 4321
-result_dir = 'results_seed%d' % val_seed
+result_dir = './results/results_joint_seed%d' % val_seed
 if not os.path.isdir(result_dir):
     os.makedirs(result_dir)
 our_dir = 'results_paper_seed4321'

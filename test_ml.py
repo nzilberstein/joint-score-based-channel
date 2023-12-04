@@ -76,7 +76,7 @@ kept_samples = 50
 # Global results
 oracle_log = np.zeros((len(spacing_range), len(alpha_range),
                        len(snr_range), kept_samples)) # Should match data
-result_dir = 'results_ml_baseline' % (
+result_dir = './results/results_ml_baseline' % (
     args.model, args.channel)
 if not os.path.isdir(result_dir):
     os.makedirs(result_dir)
