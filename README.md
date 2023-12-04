@@ -35,8 +35,8 @@ To run channel estimation with the 3GPP data and the pretrained model run:
 
 This will run channel estimation in the setting of paper with P = 30 and D = 50 of the paper; see the corresponding result in:
 
-<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_SER_64x32.pdf">
-<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_symbs_64x32.pdf">
+<embed src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_SER_64x32.pdf">
+<embed src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_symbs_64x32.pdf">
 
 Running the above command will automaticall save results in the `results_seed%f/3GPP_numpilots%f_numsymbols%f.pt` folder. 
 
