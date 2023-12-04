@@ -35,13 +35,13 @@ There is also a notebook to run the training.
 To run channel estimation with the 3GPP data and the pretrained model run:
 
 ```
-python test_score.py
+python test_joint.py
 ```
 
 This will run channel estimation in the setting of paper with P = 30 and D = 50 of the paper; see the corresponding result in:
 
-<img src="https://github.com/utcsilab/score-based-channels/blob/main/figures/recon_SER_64x32.png" width="860" height="600">
-<img src="https://github.com/utcsilab/score-based-channels/blob/main/figures/recon_symbs_64x32.png" width="860" height="600">
+<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_SER_64x32.pdf" width="860" height="600">
+<img src="https://github.com/nzilberstein/joint-score-based-channel/blob/main/figures/recon_symbs_64x32.pdf" width="860" height="600">
 
 Running the above command will automaticall save results in the `results_seed%f/3GPP_numpilots%f_numsymbols%f.pt` folder. 
 There is also a notebook to run the inference.
