@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Oct  5 13:51:16 2021
-
-@author: yanni
-"""
-
 import torch, hdf5storage
 from torch.utils.data import Dataset
 import numpy as np

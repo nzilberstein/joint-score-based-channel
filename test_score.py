@@ -13,7 +13,6 @@ sys.path.append('./')
 from ncsnv2.models.ncsnv2 import NCSNv2Deepest
 from data.loaders          import Channels
 from torch.utils.data import DataLoader
-from utils.logger import get_logger
 from utils.util import *
 from data.sample_generator import *
 
