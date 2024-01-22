@@ -30,7 +30,7 @@ args = parser.parse_args()
 
 
 # logger
-logger = get_logger(input_name = 'first_order', 
+logger = get_logger(input_name = 'second_order', 
                     stream_handler = False)
 
 # Cuda config
@@ -67,17 +67,21 @@ diffuser = diffuser.cuda()
 diffuser.load_state_dict(contents['model_state']) 
 diffuser.eval()
 
-# Set some paramaters
-snr_range = np.arange(5, 32.5, 2.5)
+# Set system parameters
+snr_range = np.arange(10, 32.5, 2.5)
 noise_range = 10 ** (-snr_range / 10.) * config.data.image_size[1]
 
 NR = config.data.image_size[0]
 NT = config.data.image_size[1]
 M = int(np.sqrt(config.data.mod_n))
 
-num_channels = 50 
-total_iter = int(config.model.num_classes * config.sampling.steps_each) 
 logger.info(f"Size of the channels: {NR}x{NT}.")
+
+# Set inference process parameters
+num_channels = 50 
+# total_iter = int(config.model.num_classes * config.sampling.steps_each) 
+step_num_classes = 5
+total_iter = int( np.ceil(config.model.num_classes / step_num_classes) * config.sampling.steps_each)
 logger.info(f"Total number of iterations: {total_iter}.")
 
 
@@ -97,7 +101,6 @@ H_test_real_repr[:,0:NR,NT:] = torch.imag(aux)
 H_test_real_repr[:,NR:,0:NT] = torch.imag(aux)
 H_test_real_repr[:,NR:,NT:] = torch.real(aux)
 H_test_real_repr[:,:NR,NT:] = -H_test_real_repr[:,:NR,NT:]
-
 logger.info(f"Channels loaded.")
 
 
@@ -112,7 +115,6 @@ for batch_size_x in args.batch_size_x_list:
         SER_langevin = []
         oracle_log = np.zeros((len(snr_range), total_iter)) 
         config.data.num_pilots = pilots
-        print(config.data.num_pilots)
 
         # Load data
         dataset_pilots = Channels(test_seed, config, H = H_test_complex, norm="global")
@@ -134,6 +136,8 @@ for batch_size_x in args.batch_size_x_list:
             # Setting parameters for each SNR
             iter_lang = 0
             Id = batch_identity_matrix(2 * NR, 2 * NR, batch_size)
+            
+            # Hyperparameters of Langevin
             if snr_range[snr_idx] < 20:
                 temp_x      = 0.5 #0.7
                 sigmas_x    = np.linspace(0.6, 0.01, config.model.num_classes)
@@ -142,14 +146,18 @@ for batch_size_x in args.batch_size_x_list:
                 temp_x      = 0.1
                 sigmas_x    = np.linspace(0.8, 0.01, config.model.num_classes)
                 epsilon     = 4E-5
+            
+            temp_H = 0.0001
+            mass_inv = 2
+            mass = 1 / mass_inv
+            gamma = 1
 
-            temp_H = 0.001
-                        
             # Prepare data associated to the pilots
             y_pilots       = torch.matmul(pilots_conj, H_herm_complex)
             y_pilots     = y_pilots + np.sqrt(local_noise) * torch.randn_like(y_pilots) 
             H_current = torch.randn_like(H_herm_complex)
             oracle    = H_herm_complex
+            v_H = torch.randn_like(H_herm_complex).to(device=device)
             H_list = []
 
             # Prepare data associated to the symbols
@@ -162,6 +170,7 @@ for batch_size_x in args.batch_size_x_list:
             y_x       = torch.matmul(H_test_real_repr.double(), x_true.double()).to(device=device).float()
             y_x       = y_x + np.sqrt(local_noise) * torch.randn_like(y_x).to(device=device)
             H_current_x = torch.zeros([num_channels, 2 * NR, 2 * NT])
+            v_x        = torch.randn_like(x_true).to(device=device)
 
             # Create joint vector of measurements
             y_x_complex = y_x.chunk(2, dim =1)
@@ -170,7 +179,7 @@ for batch_size_x in args.batch_size_x_list:
             y_H = torch.cat((y_pilots.to(device=device), y_x_complex.to(device=device)), dim = 1)
 
             with torch.no_grad():
-                for step_idx in tqdm(range(config.model.num_classes)):
+                for step_idx in tqdm(range(0, config.model.num_classes, step_num_classes)):
                     # Compute current step size and noise power
                     current_sigma = diffuser.sigmas[step_idx].item()
                     current_sigma_x = sigmas_x[step_idx]
@@ -184,10 +193,65 @@ for batch_size_x in args.batch_size_x_list:
                             (current_sigma / config.model.sigma_end) ** 2
                     step_x = epsilon * \
                             (current_sigma_x / sigmas_x[-1]) ** 2    #7E-5
+                    
+                    #------------------------#
+                    # Compute grad for x #
+                    #------------------------#       
 
+                    H_current_nonHerm = torch.transpose(torch.conj(H_current), 2, 1).to(device=device)
+                    H_current_x[:,0:NR,0:NT] = torch.real(H_current_nonHerm)
+                    H_current_x[:,0:NR,NT:] = torch.imag(H_current_nonHerm)
+                    H_current_x[:,NR:,0:NT] = torch.imag(H_current_nonHerm)
+                    H_current_x[:,NR:,NT:] = torch.real(H_current_nonHerm)
+                    H_current_x[:,NR:,0:NT] = -H_current_x[:,NR:,0:NT]            
+
+                    grad = torch.zeros((num_channels, 2 * NT, batch_size_x)).to(device=device)
+                    # Score of the prior
+                    x_gaussian = torch.transpose(x_current, 2, 1)
+                    Zi_hat = gaussian(x_gaussian.reshape(batch_size_x * num_channels, 2 *NT), generator, current_sigma_x**2, NT, M, device)
+                    Zi_hat = torch.transpose(torch.reshape(Zi_hat, (num_channels, batch_size_x, 2 * NT)), 2, 1)
+                    prior = (Zi_hat - x_current) / current_sigma_x**2
+                    
+                    # Score of the likelihood
+                    diff =  (y_x - torch.matmul(H_current_x.to(device=device), x_current))
+                    cov_matrix = (current_sigma_x**2) * torch.bmm(H_current_x, torch.transpose(H_current_x, 2, 1)) + local_noise * Id
+                    cov_matrix = torch.inverse(cov_matrix.to(device=device))
+                    grad_likelihood = torch.matmul(cov_matrix, diff.float()).to(device=device)
+                    grad_likelihood = torch.matmul(torch.transpose(H_current_x, 2, 1).to(device=device), grad_likelihood)
+                    del cov_matrix
+
+                    # Score of the posterior
+                    grad = grad_likelihood + prior
+                    
+                    #------------------------#
+                    # Compute grad for H #
+                    #------------------------#
+                    
+                    # Score of the prior
+                    current_real = torch.view_as_real(H_current).permute(0, 3, 1, 2)
+                    with torch.no_grad():
+                        score = diffuser(current_real, labels)
+                    # View as complex
+                    score = torch.view_as_complex(score.permute(0, 2, 3, 1).contiguous())
+                    # Score of the likelihood
+                    if args.sample_joint == True:
+                        forward_complex = x_current.chunk(2, dim = 1)
+                        forward_complex = (forward_complex[0] - 1j * forward_complex[1])
+                        forward_complex = torch.transpose(forward_complex, -1 , -2)
+                        forward_H = torch.cat((pilots_conj.to(device=device), forward_complex.to(device=device)), dim = 1)
+                        forward_herm = torch.conj(torch.transpose(forward_H, -1, -2)).to(device=device)
+                        meas_grad = torch.matmul(forward_herm, 
+                                                torch.matmul(forward_H,  H_current.to(device=device)) - y_H
+                                                )
+                        
+                    else:
+                        meas_grad = torch.matmul(pilots, 
+                                                torch.matmul(pilots_conj, H_current.to(device=device)) - y_pilots
+                                                )
+                    grad_H = (score.to(device=device) - meas_grad.to(device=device) / (local_noise/2. + current_sigma ** 2))
                     # For each step spent at that noise level
                     for inner_idx in range(config.sampling.steps_each):
-                    
+                        
                         H_current_nonHerm = torch.transpose(torch.conj(H_current), 2, 1).to(device=device)
                         H_current_x[:,0:NR,0:NT] = torch.real(H_current_nonHerm)
                         H_current_x[:,0:NR,NT:] = torch.imag(H_current_nonHerm)
@@ -198,6 +262,10 @@ for batch_size_x in args.batch_size_x_list:
                         #------------------------#
                         # Compute Langevin for x #
                         #------------------------#
+
+                        v_x = v_x + step_x / 2 * grad
+                        x_current = x_current + mass_inv * step_x / 2 * v_x 
+                        v_x = np.exp(- gamma * step_x) * v_x + np.sqrt(mass * temp_x * step_x * (1 - np.exp(-2 * gamma * step_x))) * torch.randn_like(x_current)
 
                         grad = torch.zeros((num_channels, 2 * NT, batch_size_x)).to(device=device)
                         # Score of the prior
@@ -221,11 +289,16 @@ for batch_size_x in args.batch_size_x_list:
                         noise = np.sqrt( 2 * temp_x * step_x) * torch.randn(num_channels, 2 * NT, batch_size_x).to(device=device)
                         
                         # Update
-                        x_current = x_current + step_x * grad + noise
+                        x_current = x_current + mass_inv * step_x / 2 * v_x
+                        v_x = v_x + step_x / 2 * grad
         
                         #------------------------#
                         # Compute Langevin for H #
                         #------------------------#
+
+                        v_H = v_H + step_H / 2 * (grad_H)
+                        H_current = H_current + mass_inv * step_H / 2 * v_H
+                        v_H = np.exp(- gamma * step_H) * v_H + np.sqrt(mass * temp_H * step_H * (1 - np.exp(-2 * gamma * step_H))) * torch.randn_like(H_current)
 
                         #  Score of the prior
                         current_real = torch.view_as_real(H_current).permute(0, 3, 1, 2)
@@ -244,19 +317,18 @@ for batch_size_x in args.batch_size_x_list:
                             meas_grad = torch.matmul(forward_herm, 
                                                     torch.matmul(forward_H,  H_current.to(device=device)) - y_H
                                                     )
+                            
                         else:
                             meas_grad = torch.matmul(pilots, 
                                                     torch.matmul(pilots_conj, H_current.to(device=device)) - y_pilots
                                                     )
 
-                        # Noise generation
-                        grad_noise = np.sqrt(2 * step_H * temp_H) * torch.randn_like(H_current) 
+                        grad_H = (score.to(device=device) - meas_grad.to(device=device) / (local_noise/2. + current_sigma ** 2))
                         
                         # Update
-                        H_current = H_current.to(device=device) \
-                                    + step_H * (score.to(device=device) - meas_grad.to(device=device) / (local_noise/2. + current_sigma ** 2)) \
-                                    + grad_noise.to(device=device)
-                        
+                        H_current = H_current.to(device=device) + mass_inv * step_H / 2 * v_H
+                        v_H = v_H + step_H / 2 * (grad_H)
+
                         # Store error
                         oracle_log[snr_idx, iter_lang] = \
                             torch.mean((torch.sum(torch.square(torch.abs(H_current.to(device='cpu') - oracle.to(device='cpu'))), dim=(-1, -2))/\
@@ -264,6 +336,8 @@ for batch_size_x in args.batch_size_x_list:
                         if iter_lang % 100 == 0:
                             logger.info(f"NMSE [dB] at {iter_lang}: {10 * np.log10(oracle_log[snr_idx,iter_lang])}.")
                         iter_lang = iter_lang + 1
+                       
+
 
             
             H_list.append(H_current_x)

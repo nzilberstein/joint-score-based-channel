@@ -1,0 +1,15 @@
+01/22/2024 10:44:59 AM Device set to cuda:0.
+01/22/2024 10:44:59 AM Command line parameters: Namespace(gpu=0, channel='3GPP', save_channels=0, pilot_alpha=[0.5], batch_size_x_list=[50], pilots_list=[30], sample_joint=False).
+01/22/2024 10:44:59 AM Results will be saved to results_joint_seed4321.
+01/22/2024 10:45:00 AM Size of the channels: 64x32.
+01/22/2024 10:45:00 AM Total number of iterations: 1389.
+01/22/2024 10:45:02 AM Channels loaded.
+01/22/2024 10:45:02 AM Starting experiment with this number of pilots: 30.
+01/22/2024 10:45:02 AM Starting experiment with this number of symbols: 50.
+01/22/2024 10:45:04 AM NMSE [dB] at 0: 6.08595187217423.
+01/22/2024 10:45:07 AM NMSE [dB] at 100: -5.04634428867782.
+01/22/2024 10:45:10 AM NMSE [dB] at 200: -5.709164200961039.
+01/22/2024 10:45:13 AM NMSE [dB] at 300: -5.864017447738437.
+01/22/2024 10:45:17 AM NMSE [dB] at 400: -5.866047925486047.
+01/22/2024 10:45:20 AM NMSE [dB] at 500: -5.864899952055275.
+01/22/2024 10:45:23 AM NMSE [dB] at 600: -5.866519092049644.

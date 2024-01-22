@@ -1,0 +1,8 @@
+01/22/2024 10:46:56 AM Device set to cuda:0.
+01/22/2024 10:46:56 AM Command line parameters: Namespace(gpu=0, channel='3GPP', save_channels=0, pilot_alpha=[0.5], batch_size_x_list=[50], pilots_list=[30], sample_joint=False).
+01/22/2024 10:46:56 AM Results will be saved to results_joint_seed4321.
+01/22/2024 10:46:57 AM Size of the channels: 64x32.
+01/22/2024 10:46:57 AM Total number of iterations: 6933.
+01/22/2024 10:46:59 AM Channels loaded.
+01/22/2024 10:46:59 AM Starting experiment with this number of pilots: 30.
+01/22/2024 10:46:59 AM Starting experiment with this number of symbols: 50.
