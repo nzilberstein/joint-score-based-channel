@@ -58,7 +58,7 @@ contents = torch.load(target_weights)
 config = contents['config']
 config.sampling.steps_each = 3
 config.data.channel  = args.channel
-config.model.step_size = 1 * 1e-10
+config.model.step_size = 3 * 1e-10
 config.data.mod_n = 4
 
 # Get and load the model
@@ -80,7 +80,7 @@ logger.info(f"Size of the channels: {NR}x{NT}.")
 # Set inference process parameters
 num_channels = 50 
 # total_iter = int(config.model.num_classes * config.sampling.steps_each) 
-step_num_classes = 5
+step_num_classes = 8
 total_iter = int( np.ceil(config.model.num_classes / step_num_classes) * config.sampling.steps_each)
 logger.info(f"Total number of iterations: {total_iter}.")
 
@@ -148,9 +148,9 @@ for batch_size_x in args.batch_size_x_list:
                 epsilon     = 4E-5
             
             temp_H = 0.0001
-            mass_inv = 2
+            mass_inv = 3
             mass = 1 / mass_inv
-            gamma = 1
+            gamma = 2
 
             # Prepare data associated to the pilots
             y_pilots       = torch.matmul(pilots_conj, H_herm_complex)
@@ -298,7 +298,7 @@ for batch_size_x in args.batch_size_x_list:
 
                         v_H = v_H + step_H / 2 * (grad_H)
                         H_current = H_current + mass_inv * step_H / 2 * v_H
-                        v_H = np.exp(- gamma * step_H) * v_H + np.sqrt(mass * temp_H * step_H * (1 - np.exp(-2 * gamma * step_H))) * torch.randn_like(H_current)
+                        v_H = np.exp(- gamma * step_H) * v_H + np.sqrt(mass * temp_H * (1 - np.exp(-2 * gamma * step_H))) * torch.randn_like(H_current)
 
                         #  Score of the prior
                         current_real = torch.view_as_real(H_current).permute(0, 3, 1, 2)
@@ -326,7 +326,7 @@ for batch_size_x in args.batch_size_x_list:
                         grad_H = (score.to(device=device) - meas_grad.to(device=device) / (local_noise/2. + current_sigma ** 2))
                         
                         # Update
-                        H_current = H_current.to(device=device) + mass_inv * step_H / 2 * v_H
+                        H_current = H_current + mass_inv * step_H / 2 * v_H
                         v_H = v_H + step_H / 2 * (grad_H)
 
                         # Store error
@@ -334,7 +334,7 @@ for batch_size_x in args.batch_size_x_list:
                             torch.mean((torch.sum(torch.square(torch.abs(H_current.to(device='cpu') - oracle.to(device='cpu'))), dim=(-1, -2))/\
                             torch.sum(torch.square(torch.abs(oracle.to(device='cpu'))), dim=(-1, -2)))).cpu().numpy()
                         if iter_lang % 100 == 0:
-                            logger.info(f"NMSE [dB] at {iter_lang}: {10 * np.log10(oracle_log[snr_idx,iter_lang])}.")
+                            logger.info(f"NMSE [dB] at {iter_lang} and {snr_range[snr_idx]}: {10 * np.log10(oracle_log[snr_idx,iter_lang])}.")
                         iter_lang = iter_lang + 1
                        
 
@@ -342,7 +342,7 @@ for batch_size_x in args.batch_size_x_list:
             
             H_list.append(H_current_x)
             SER_langevin.append(1 - sym_detection(torch.transpose(x_current, -1, -2).reshape(num_channels * batch_size_x, 2 * NT).to(device='cpu'), j_indices, generator.real_QAM_const, generator.imag_QAM_const))
-            print(snr_range[snr_idx], 10 * np.log10(oracle_log[:,-1]))
+            logger.info(f"NMSE [dB] at {snr_range[snr_idx]}: {10 * np.log10(oracle_log[:,-1])}.")
 
         torch.cuda.empty_cache()
 
@@ -357,4 +357,4 @@ for batch_size_x in args.batch_size_x_list:
                     'SER_langevin': SER_langevin
                     }   
         torch.save(save_dict,
-                   result_dir + '/%s_numpilots%.1f_numsymbols%.1f.pt' % (args.channel, config.data.num_pilots, batch_size_x))
+                   result_dir + '/underdamped_%s_numpilots%.1f_numsymbols%.1f_sample_joint%r.pt' % (args.channel, config.data.num_pilots, batch_size_x, args.sample_joint))
