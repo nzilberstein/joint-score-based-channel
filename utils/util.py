@@ -2,7 +2,6 @@ from unicodedata import name
 import torch
 import numpy as np
 # from numpy import linalg as LA
-from torchmetrics import SNR
 import logging
 
 """
@@ -12,20 +11,36 @@ This class handle the sample generator module, such as the symbol detection
 """
 
 
-def get_logger(stream_handler = True):
+def get_logger(input_name, stream_handler = True):
+    logging.basicConfig(format='%(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    filename='logging_file_' + input_name + '.log',
+                    filemode='w')
+
     logger = logging.getLogger(name='JED_MAP_Langevin§')
     logger.setLevel(logging.INFO)
-    
-    formatter = logging.Formatter("%(asctime)s [%(name)s] >> %(message)s")
     if stream_handler:
+        formatter = logging.Formatter("%(asctime)s [%(name)s] >> %(message)s")
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
-    else:
-        fh = logging.FileHandler('logging_file.log')
-        logger.addHandler(fh)
+        # fh = logging.FileHandler('logging_file.log')
+        # logger.addHandler(fh)
 
     return logger
+
+
+class TqdmLoggingHandler(logging.Handler):
+    def __init__(self, level=logging.NOTSET):
+        super().__init__(level)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            tqdm.tqdm.write(msg)
+            self.flush()
+        except Exception:
+            self.handleError(record)  
 
 def sym_detection(x_hat, j_indices, real_QAM_const, imag_QAM_const):
     #Convierte a complejo

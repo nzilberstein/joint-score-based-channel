@@ -22,16 +22,16 @@ parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--channel', type=str, default='3GPP')
 parser.add_argument('--save_channels', type=int, default=0)
 parser.add_argument('--pilot_alpha', nargs='+', type=float, default=[32/64])
-parser.add_argument('--noise_boost', nargs='+', type=float, default=0.001)
 parser.add_argument('--batch_size_x_list', nargs='+', type=float, default=[50])
 parser.add_argument('--pilots_list', nargs='+', type=float, default=[30])
-parser.add_argument('--sample_joint', type=bool, default=True)
+parser.add_argument('--sample_joint', action='store_false')
 
 args = parser.parse_args()
 
 
 # logger
-logger = get_logger()
+logger = get_logger(input_name = 'first_order', 
+                    stream_handler = False)
 
 # Cuda config
 torch.cuda.empty_cache()
@@ -43,6 +43,7 @@ os.environ["CUDA_DEVICE_ORDER"]    = "PCI_BUS_ID";
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu);    
 
 logger.info(f"Device set to {device}.")
+logger.info(f"Command line parameters: {args}.")
 
 # Load configs
 test_seed = 4321
@@ -57,7 +58,7 @@ contents = torch.load(target_weights)
 config = contents['config']
 config.sampling.steps_each = 3
 config.data.channel  = args.channel
-config.model.step_size = 1 * 1e-10
+config.model.step_size = 3 * 1e-10
 config.data.mod_n = 4
 
 # Get and load the model
@@ -67,16 +68,17 @@ diffuser.load_state_dict(contents['model_state'])
 diffuser.eval()
 
 # Set some paramaters
-snr_range = np.arange(-10, 17.5, 2.5)
-noise_range = 10 ** (-snr_range / 10.)
+snr_range = np.arange(10, 32.5, 2.5)
+noise_range = 10 ** (-snr_range / 10.) * config.data.image_size[1]
 
 NR = config.data.image_size[0]
 NT = config.data.image_size[1]
 M = int(np.sqrt(config.data.mod_n))
 
 num_channels = 50 
-total_iter = int(config.model.num_classes * config.sampling.steps_each) 
-noise_boost = args.noise_boost
+# total_iter = int(config.model.num_classes * config.sampling.steps_each) 
+step_num_classes = 8
+total_iter = int( np.ceil(config.model.num_classes / step_num_classes) * config.sampling.steps_each)
 logger.info(f"Size of the channels: {NR}x{NT}.")
 logger.info(f"Total number of iterations: {total_iter}.")
 
@@ -102,7 +104,6 @@ logger.info(f"Channels loaded.")
 
 
 # Main loop -- inference
-
 for batch_size_x in args.batch_size_x_list:  
     for pilots in args.pilots_list:
         logger.info(f"Starting experiment with this number of pilots: {pilots}.")
@@ -112,7 +113,6 @@ for batch_size_x in args.batch_size_x_list:
         SER_langevin = []
         oracle_log = np.zeros((len(snr_range), total_iter)) 
         config.data.num_pilots = pilots
-        print(config.data.num_pilots)
 
         # Load data
         dataset_pilots = Channels(test_seed, config, H = H_test_complex, norm="global")
@@ -134,7 +134,7 @@ for batch_size_x in args.batch_size_x_list:
             # Setting parameters for each SNR
             iter_lang = 0
             Id = batch_identity_matrix(2 * NR, 2 * NR, batch_size)
-            if snr_range[snr_idx] < 5:
+            if snr_range[snr_idx] < 20:
                 temp_x      = 0.5 #0.7
                 sigmas_x    = np.linspace(0.6, 0.01, config.model.num_classes)
                 epsilon     = 1E-4
@@ -142,6 +142,8 @@ for batch_size_x in args.batch_size_x_list:
                 temp_x      = 0.1
                 sigmas_x    = np.linspace(0.8, 0.01, config.model.num_classes)
                 epsilon     = 4E-5
+
+            temp_H = 0.0001
                         
             # Prepare data associated to the pilots
             y_pilots       = torch.matmul(pilots_conj, H_herm_complex)
@@ -168,7 +170,7 @@ for batch_size_x in args.batch_size_x_list:
             y_H = torch.cat((y_pilots.to(device=device), y_x_complex.to(device=device)), dim = 1)
 
             with torch.no_grad():
-                for step_idx in tqdm(range(config.model.num_classes)):
+                for step_idx in tqdm(range(0, config.model.num_classes, step_num_classes)):
                     # Compute current step size and noise power
                     current_sigma = diffuser.sigmas[step_idx].item()
                     current_sigma_x = sigmas_x[step_idx]
@@ -248,7 +250,7 @@ for batch_size_x in args.batch_size_x_list:
                                                     )
 
                         # Noise generation
-                        grad_noise = np.sqrt(2 * step_H * noise_boost) * torch.randn_like(H_current) 
+                        grad_noise = np.sqrt(2 * step_H * temp_H) * torch.randn_like(H_current) 
                         
                         # Update
                         H_current = H_current.to(device=device) \
@@ -259,12 +261,14 @@ for batch_size_x in args.batch_size_x_list:
                         oracle_log[snr_idx, iter_lang] = \
                             torch.mean((torch.sum(torch.square(torch.abs(H_current.to(device='cpu') - oracle.to(device='cpu'))), dim=(-1, -2))/\
                             torch.sum(torch.square(torch.abs(oracle.to(device='cpu'))), dim=(-1, -2)))).cpu().numpy()
+                        if iter_lang % 100 == 0:
+                            logger.info(f"NMSE [dB] at {iter_lang} and {snr_range[snr_idx]}: {10 * np.log10(oracle_log[snr_idx,iter_lang])}.")
                         iter_lang = iter_lang + 1
 
             
             H_list.append(H_current_x)
             SER_langevin.append(1 - sym_detection(torch.transpose(x_current, -1, -2).reshape(num_channels * batch_size_x, 2 * NT).to(device='cpu'), j_indices, generator.real_QAM_const, generator.imag_QAM_const))
-            print(snr_range[snr_idx], 10 * np.log10(oracle_log[:,-1]))
+            logger.info(f"NMSE [dB] at {snr_range[snr_idx]}: {10 * np.log10(oracle_log[:,-1])}.")
 
         torch.cuda.empty_cache()
 
@@ -279,4 +283,4 @@ for batch_size_x in args.batch_size_x_list:
                     'SER_langevin': SER_langevin
                     }   
         torch.save(save_dict,
-                   result_dir + '/%s_numpilots%.1f_numsymbols%.1f.pt' % (args.channel, config.data.num_pilots, batch_size_x))
+                   result_dir + '/overdamped_%s_numpilots%.1f_numsymbols%.1f_sample_joint%r.pt' % (args.channel, config.data.num_pilots, batch_size_x, args.sample_joint))

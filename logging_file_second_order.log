@@ -1,0 +1,65 @@
+01/24/2024 10:34:01 AM Device set to cuda:0.
+01/24/2024 10:34:01 AM Command line parameters: Namespace(gpu=0, channel='3GPP', save_channels=0, pilot_alpha=[0.5], batch_size_x_list=[50], pilots_list=[30], sample_joint=True).
+01/24/2024 10:34:01 AM Results will be saved to results_joint_seed4321.
+01/24/2024 10:34:02 AM Size of the channels: 64x32.
+01/24/2024 10:34:02 AM Total number of iterations: 867.
+01/24/2024 10:34:04 AM Channels loaded.
+01/24/2024 10:34:04 AM Starting experiment with this number of pilots: 30.
+01/24/2024 10:34:04 AM Starting experiment with this number of symbols: 50.
+01/24/2024 10:34:06 AM NMSE [dB] at 0 and 10.0: 27.05864286259026.
+01/24/2024 10:34:09 AM NMSE [dB] at 100 and 10.0: nan.
+01/24/2024 10:34:12 AM NMSE [dB] at 200 and 10.0: nan.
+01/24/2024 10:34:16 AM NMSE [dB] at 300 and 10.0: nan.
+01/24/2024 10:34:19 AM NMSE [dB] at 400 and 10.0: nan.
+01/24/2024 10:34:22 AM NMSE [dB] at 500 and 10.0: nan.
+01/24/2024 10:34:25 AM NMSE [dB] at 600 and 10.0: nan.
+01/24/2024 10:34:28 AM NMSE [dB] at 700 and 10.0: nan.
+01/24/2024 10:34:31 AM NMSE [dB] at 800 and 10.0: nan.
+01/24/2024 10:34:34 AM NMSE [dB] at 10.0: [ nan -inf -inf -inf -inf -inf -inf -inf -inf].
+01/24/2024 10:34:34 AM NMSE [dB] at 0 and 12.5: 27.08997425664304.
+01/24/2024 10:34:37 AM NMSE [dB] at 100 and 12.5: nan.
+01/24/2024 10:34:40 AM NMSE [dB] at 200 and 12.5: nan.
+01/24/2024 10:34:43 AM NMSE [dB] at 300 and 12.5: nan.
+01/24/2024 10:34:46 AM NMSE [dB] at 400 and 12.5: nan.
+01/24/2024 10:34:49 AM NMSE [dB] at 500 and 12.5: nan.
+01/24/2024 10:34:53 AM NMSE [dB] at 600 and 12.5: nan.
+01/24/2024 10:34:56 AM NMSE [dB] at 700 and 12.5: nan.
+01/24/2024 10:34:59 AM NMSE [dB] at 800 and 12.5: nan.
+01/24/2024 10:35:01 AM NMSE [dB] at 12.5: [ nan  nan -inf -inf -inf -inf -inf -inf -inf].
+01/24/2024 10:35:01 AM NMSE [dB] at 0 and 15.0: 27.144103485798116.
+01/24/2024 10:35:04 AM NMSE [dB] at 100 and 15.0: nan.
+01/24/2024 10:35:07 AM NMSE [dB] at 200 and 15.0: nan.
+01/24/2024 10:35:10 AM NMSE [dB] at 300 and 15.0: nan.
+01/24/2024 10:35:14 AM NMSE [dB] at 400 and 15.0: nan.
+01/24/2024 10:35:17 AM NMSE [dB] at 500 and 15.0: nan.
+01/24/2024 10:35:20 AM NMSE [dB] at 600 and 15.0: nan.
+01/24/2024 10:35:23 AM NMSE [dB] at 700 and 15.0: nan.
+01/24/2024 10:35:26 AM NMSE [dB] at 800 and 15.0: nan.
+01/24/2024 10:35:28 AM NMSE [dB] at 15.0: [ nan  nan  nan -inf -inf -inf -inf -inf -inf].
+01/24/2024 10:35:28 AM NMSE [dB] at 0 and 17.5: 27.16169084153012.
+01/24/2024 10:35:31 AM NMSE [dB] at 100 and 17.5: nan.
+01/24/2024 10:35:35 AM NMSE [dB] at 200 and 17.5: nan.
+01/24/2024 10:35:38 AM NMSE [dB] at 300 and 17.5: nan.
+01/24/2024 10:35:41 AM NMSE [dB] at 400 and 17.5: nan.
+01/24/2024 10:35:44 AM NMSE [dB] at 500 and 17.5: nan.
+01/24/2024 10:35:47 AM NMSE [dB] at 600 and 17.5: nan.
+01/24/2024 10:35:50 AM NMSE [dB] at 700 and 17.5: nan.
+01/24/2024 10:35:54 AM NMSE [dB] at 800 and 17.5: nan.
+01/24/2024 10:35:56 AM NMSE [dB] at 17.5: [ nan  nan  nan  nan -inf -inf -inf -inf -inf].
+01/24/2024 10:35:56 AM NMSE [dB] at 0 and 20.0: 27.27448670405629.
+01/24/2024 10:35:59 AM NMSE [dB] at 100 and 20.0: nan.
+01/24/2024 10:36:02 AM NMSE [dB] at 200 and 20.0: nan.
+01/24/2024 10:36:05 AM NMSE [dB] at 300 and 20.0: nan.
+01/24/2024 10:36:08 AM NMSE [dB] at 400 and 20.0: nan.
+01/24/2024 10:36:12 AM NMSE [dB] at 500 and 20.0: nan.
+01/24/2024 10:36:15 AM NMSE [dB] at 600 and 20.0: nan.
+01/24/2024 10:36:18 AM NMSE [dB] at 700 and 20.0: nan.
+01/24/2024 10:36:21 AM NMSE [dB] at 800 and 20.0: nan.
+01/24/2024 10:36:23 AM NMSE [dB] at 20.0: [ nan  nan  nan  nan  nan -inf -inf -inf -inf].
+01/24/2024 10:36:23 AM NMSE [dB] at 0 and 22.5: 27.169529966499898.
+01/24/2024 10:36:26 AM NMSE [dB] at 100 and 22.5: nan.
+01/24/2024 10:36:29 AM NMSE [dB] at 200 and 22.5: nan.
+01/24/2024 10:36:33 AM NMSE [dB] at 300 and 22.5: nan.
+01/24/2024 10:36:36 AM NMSE [dB] at 400 and 22.5: nan.
+01/24/2024 10:36:39 AM NMSE [dB] at 500 and 22.5: nan.
+01/24/2024 10:36:42 AM NMSE [dB] at 600 and 22.5: nan.
